@@ -1,35 +1,40 @@
-# Proxmox VM — Claude Code Session Setup
+# Proxmox VM — Isolated Claude Code Session Setup
+
+Dieses System ist vollständig unabhängig. Es gibt keinen gemeinsamen State,
+keine geteilten Repos, keine Verbindung zu bestehenden Accounts oder Projekten.
 
 ---
 
-## Schritt 1: Für den Host-Benutzer (ddsena-sick)
+## Schritt 1: Für den Host-Benutzer (einmalig, vor VM-Start)
 
-Diese Schritte führst **du** einmalig aus, bevor die Claude-Session auf der VM startet.
+### 1.1 Neuen GitHub Account erstellen
 
-### 1.1 GitHub Personal Access Token erstellen
+- Gehe zu: https://github.com/join
+- Neuen Account mit separater E-Mail-Adresse anlegen
+- Merke dir: `<neuer-github-username>` und `<neue-email>`
 
-1. Gehe zu: https://github.com/settings/tokens
+### 1.2 Personal Access Token für den neuen Account erstellen
+
+1. Im neuen Account: https://github.com/settings/tokens
 2. "Generate new token (classic)"
 3. Scopes: `repo`, `read:org`, `gist`
-4. Token kopieren und sicher aufbewahren — du gibst ihn der VM beim Setup
+4. Token kopieren — wird in Schritt 2.3 auf der VM gebraucht
 
-### 1.2 Anthropic API Key bereitstellen
+### 1.3 Anthropic API Key bereitstellen
 
-- API Key aus https://console.anthropic.com/settings/keys holen (oder neuen erstellen)
-- Den Key bereithalten für Schritt 2.4 auf der VM
+- Neuen Key erstellen unter: https://console.anthropic.com/settings/keys
+- Separat vom bestehenden Key halten
 
-### 1.3 VM in Proxmox erstellen
+### 1.4 VM in Proxmox erstellen
 
-- OS: Ubuntu 24.04 LTS (oder Debian 12)
+- OS: Ubuntu 24.04 LTS oder Debian 12
 - RAM: mindestens 2 GB
 - Disk: mindestens 20 GB
-- Netzwerk: eigenes isoliertes VLAN oder Bridge nach Bedarf
+- Netzwerk: isolierte Bridge oder eigenes VLAN — kein Zugriff auf andere VMs
 
 ---
 
 ## Schritt 2: Für die Claude-Session auf der VM
-
-Diese Schritte führt die **neue Claude-Session** in der Proxmox-VM aus.
 
 ### 2.1 System-Dependencies installieren
 
@@ -53,11 +58,11 @@ sudo apt update && sudo apt install -y gh
 ### 2.3 Git und GitHub konfigurieren
 
 ```bash
-git config --global user.name "ddsena-sick"
-git config --global user.email "ddsena@gmx.de"
+git config --global user.name "<neuer-github-username>"
+git config --global user.email "<neue-email>"
 ```
 
-Mit dem PAT aus Schritt 1.1 einloggen:
+Mit dem PAT aus Schritt 1.2 einloggen:
 
 ```bash
 gh auth login
@@ -71,23 +76,14 @@ gh auth login
 npm install -g @anthropic-ai/claude-code
 ```
 
-API Key setzen:
+API Key setzen (den aus Schritt 1.3):
 
 ```bash
-export ANTHROPIC_API_KEY="sk-ant-..."   # deinen Key hier eintragen
-# Dauerhaft speichern:
 echo 'export ANTHROPIC_API_KEY="sk-ant-..."' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-### 2.5 Dieses Repo klonen
-
-```bash
-git clone https://github.com/ddsena-sick/others.git ~/others
-cd ~/others
-```
-
-### 2.6 Arbeitsverzeichnis anlegen und Claude Code starten
+### 2.5 Arbeitsverzeichnis anlegen und Claude Code starten
 
 ```bash
 mkdir -p ~/projects
@@ -97,8 +93,9 @@ claude
 
 ---
 
-## Hinweise
+## Wichtige Hinweise
 
-- Diese VM ist **isoliert** vom Haupt-Setup (kein Zugriff auf ESP-IDF, Hubelino-Projekt, etc.)
-- Repos werden separat geklont — kein geteilter State mit der Haupt-Session
-- Für projektspezifische Repos: `gh repo clone ddsena-sick/<reponame>`
+- Kein Zugriff auf andere GitHub Accounts oder bestehende Repos
+- Kein geteilter API Key mit anderen Instanzen
+- Alle Repos werden frisch im neuen Account angelegt
+- Diese VM ist das einzige System, das den neuen Account nutzt
